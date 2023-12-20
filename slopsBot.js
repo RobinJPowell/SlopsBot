@@ -124,7 +124,12 @@ async function pinMessage(message) {
 	
 	if (!pinnedMessage) {
 		message.pin();
-		await PinsCollection.insertOne(findMessage);
 		Logger.info(`Pin for ${message.author.id} from ${message.id}`);
+
+		if (message.content.toLowerCase().includes(' no pin')) {
+			message.reply('SLOPSBOT DOES NOT CARE FOR YOUR INSTRUCTIONS');
+		}
+
+		await PinsCollection.insertOne(findMessage);		
 	}
 }
