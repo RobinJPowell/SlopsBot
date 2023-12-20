@@ -1,0 +1,26 @@
+{
+  "name": "slopsbot",
+  "version": "1.0.0",
+  "description": "A bot for doing the things Slops wants in their Discord",
+  "main": "slopsBot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RobinJPowell/SlopsBot.git"
+  },
+  "author": "Robin Powell",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RobinJPowell/SlopsBot/issues"
+  },
+  "homepage": "https://github.com/RobinJPowell/SlopsBot#readme",
+  "dependencies": {
+    "all": "^0.0.0",
+    "discord": "^0.8.2",
+    "discord.js": "^14.14.1",
+    "mongodb": "^6.3.0",
+    "winston": "^3.11.0"
+  }
+}
