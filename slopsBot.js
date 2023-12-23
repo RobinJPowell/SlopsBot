@@ -89,10 +89,17 @@ async function addRole(roleName, message) {
 		if (!roleUser) {
 			const role = message.guild.roles.cache.find(role => role.name == roleName);
 
-			message.member.roles.add(role);
-			Logger.info(`${roleName} given to ${message.author.id}`);
-			await RolesCollection.insertOne({ ...findRoleUser, timestamp: new Date(Date.now()) });						
+			try {
+				message.member.roles.add(role);
+				Logger.info(`${roleName} given to ${message.author.id} (${message.author.displayname})`);
+				Logger.debug(`${message.content}`);
+				await RolesCollection.insertOne({ ...findRoleUser, displayName: message.author.displayname, timestamp: new Date(Date.now()) });	
+			} catch (error) {
+				Logger.error(`Error when adding role ${roleName} to ${message.author.id} (${message.author.displayname}): ${error.message}`);
+			}
 		} else {
+			Logger.info(`${roleName} extended for ${message.author.id} (${message.author.displayname})`);
+			Logger.debug(`${message.content}`);
 			await RolesCollection.updateOne(findRoleUser, { $set: { timestamp: new Date(Date.now()) } })
 		}
 
@@ -111,9 +118,13 @@ async function removeRoles() {
 			const member = await guild.members.fetch(roleUser.user);
 			const role = guild.roles.cache.find(role => role.name == roleUser.role);
 
-			member.roles.remove(role);
-			Logger.info(`${roleUser.role} removed from ${roleUser.user}`)
-			await RolesCollection.deleteOne({ role: roleUser.role, user: roleUser.user, server: roleUser.server });			
+			try {
+				member.roles.remove(role);
+				Logger.info(`${roleUser.role} removed from ${roleUser.user} (${roleUser.displayName})`);
+				await RolesCollection.deleteOne({ role: roleUser.role, user: roleUser.user, server: roleUser.server });
+			} catch (error) {
+				Logger.error(`Error when removing role ${roleName} from ${message.author.id} (${message.author.displayname}): ${error.message}`);
+			}			
 		}
 	});
 }
@@ -123,13 +134,22 @@ async function pinMessage(message) {
 	const pinnedMessage = await PinsCollection.findOne(findMessage);
 	
 	if (!pinnedMessage) {
-		message.pin();
-		Logger.info(`Pin for ${message.author.id} from ${message.id}`);
+		try {
+			message.pin();
+			Logger.info(`Pin for ${message.author.id} from ${message.id} (${message.author.displayname})`);
+			Logger.debug(`${message.content}`);
 
-		if (message.content.toLowerCase().includes(' no pin')) {
-			message.reply('SLOPSBOT DOES NOT CARE FOR YOUR INSTRUCTIONS');
-		}
+			if (message.content.toLowerCase().includes(' no pin')) {
+				message.reply('SLOPSBOT DOES NOT CARE FOR YOUR INSTRUCTIONS');
+			}
 
-		await PinsCollection.insertOne(findMessage);		
+			await PinsCollection.insertOne(findMessage);
+		} catch (error) {
+			Logger.error(`Error when pinning message ${message.id}: ${error.message}`);
+
+			if (error.message.includes('Maximum number of pins reached')) {
+				message.reply('Unable to pin, maxiumum number of pins reached');
+			}
+		}		
 	}
 }
