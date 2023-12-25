@@ -17,6 +17,11 @@ const CardsCollection = Database.collection('cards');
 const PinsCollection = Database.collection('pins');
 const RolesCollection = Database.collection('roles');
 
+// Role names
+RedRole = 'Recently made a really bad pun, jape, hijink or caper.';
+GreenRole = 'Recently actually made a good pun, jape, hijink or caper.';
+YellowRole = 'Recently actually made an average pun, jape, hijink or caper.';
+
 const bot = new Discord.Client({intents: 37377});
 
 setInterval(removeRoles, 15 * 60 * 1000);
@@ -59,16 +64,16 @@ function checkReactions(message) {
 						
 						if (reactionCount == reactions.size) {						
 							if (redCount >= 5) {
-								addRole('Recently made a really bad pun, jape, hijink or caper.', msg);
+								addRole(RedRole, msg);
 							}
 							if (greenCount >= 5) {
-								addRole('Recently actually made a good pun, jape, hijink or caper.', msg);
+								addRole(GreenRole, msg);
 							}
 							if (yellowCount >= 5) {
-								addRole('Recently actually made an average pun, jape, hijink or caper.', msg);								
+								addRole(YellowRole, msg);
 							}
 							if (pinCount >= 5) {
-								pinMessage(msg);								
+								pinMessage(msg);
 							}
 						}
 					}, reactionCount * 50);
@@ -83,24 +88,40 @@ async function addRole(roleName, message) {
 	const cardedMessage = await CardsCollection.findOne(findMessage);
     
     if (!cardedMessage) {
-		const findRoleUser = { role: roleName, user: message.author.id, server: message.guildId };
+		const findRoleUser = { user: message.author.id, server: message.guildId };
 		const roleUser = await RolesCollection.findOne(findRoleUser);
 
 		if (!roleUser) {
-			const role = message.guild.roles.cache.find(role => role.name == roleName);
-
 			try {
+				const role = message.guild.roles.cache.find(role => role.name == roleName);
+
 				message.member.roles.add(role);
-				Logger.info(`${roleName} given to ${message.author.id} (${message.author.displayname})`);
+				Logger.info(`${roleName} given to ${message.author.id} (${message.author.displayName})`);
 				Logger.debug(`${message.content}`);
-				await RolesCollection.insertOne({ ...findRoleUser, displayName: message.author.displayname, timestamp: new Date(Date.now()) });	
+				await RolesCollection.insertOne({ ...findRoleUser, role: roleName, displayName: message.author.displayName, timestamp: new Date(Date.now()) });	
 			} catch (error) {
-				Logger.error(`Error when adding role ${roleName} to ${message.author.id} (${message.author.displayname}): ${error.message}`);
+				Logger.error(`Error when adding role ${roleName} to ${message.author.id} (${message.author.displayName}): ${error.message}`);
 			}
 		} else {
-			Logger.info(`${roleName} extended for ${message.author.id} (${message.author.displayname})`);
-			Logger.debug(`${message.content}`);
-			await RolesCollection.updateOne(findRoleUser, { $set: { timestamp: new Date(Date.now()) } })
+			if (roleUser.role == roleName) {
+				Logger.info(`${roleName} extended for ${message.author.id} (${message.author.displayName})`);
+				Logger.debug(`${message.content}`);
+				await RolesCollection.updateOne(findRoleUser, { $set: { timestamp: new Date(Date.now()) } });
+			} else {
+				try {
+					const newRole = message.guild.roles.cache.find(role => role.name == roleName);
+					const oldRole = message.guild.roles.cache.find(role => role.name == roleUser.role);
+
+					message.member.roles.remove(oldRole);
+					message.member.roles.add(newRole);
+
+					Logger.info(`${oldRole.name} changed to ${newRole.name} for ${message.author.id} (${message.author.displayName})`);
+					Logger.debug(`${message.content}`);
+					await RolesCollection.updateOne(findRoleUser, { $set: { role: roleName, timestamp: new Date(Date.now()) } });
+				} catch (error) {
+					Logger.error(`Error when switching roles from ${roleName} for ${message.author.id} (${message.author.displayName}): ${error.message}`);
+				}
+			}			
 		}
 
 		await CardsCollection.insertOne(findMessage);
@@ -123,7 +144,7 @@ async function removeRoles() {
 				Logger.info(`${roleUser.role} removed from ${roleUser.user} (${roleUser.displayName})`);
 				await RolesCollection.deleteOne({ role: roleUser.role, user: roleUser.user, server: roleUser.server });
 			} catch (error) {
-				Logger.error(`Error when removing role ${roleName} from ${message.author.id} (${message.author.displayname}): ${error.message}`);
+				Logger.error(`Error when removing role ${roleName} from ${message.author.id} (${message.author.displayName}): ${error.message}`);
 			}			
 		}
 	});
@@ -136,7 +157,7 @@ async function pinMessage(message) {
 	if (!pinnedMessage) {
 		try {
 			message.pin();
-			Logger.info(`Pin for ${message.author.id} from ${message.id} (${message.author.displayname})`);
+			Logger.info(`Pin for ${message.author.id} from ${message.id} (${message.author.displayName})`);
 			Logger.debug(`${message.content}`);
 
 			if (message.content.toLowerCase().includes(' no pin')) {
