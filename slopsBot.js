@@ -101,35 +101,35 @@ async function addRole(roleName, message) {
 		const roleUser = await RolesCollection.findOne(findRoleUser);
 
 		if (!roleUser) {
-			try {
-				const role = message.guild.roles.cache.find(role => role.name == roleName);
-
-				message.member.roles.add(role);
+			const role = message.guild.roles.cache.find(role => role.name == roleName);
+			
+			message.member.roles.add(role).then(async () => {
 				Logger.info(`${roleName} given to ${message.author.id} (${message.author.displayName})`);
 				Logger.debug(`${message.content}`);
 				await RolesCollection.insertOne({ ...findRoleUser, role: roleName, displayName: message.author.displayName, timestamp: new Date(Date.now()) });	
-			} catch (error) {
-				Logger.error(`Error when adding role ${roleName} to ${message.author.id} (${message.author.displayName}): ${error.message}`);
-			}
+			}).catch((reject) => {
+				Logger.error(`Error when adding role ${roleName} to ${message.author.id} (${message.author.displayName}): ${reject}`);
+			});
 		} else {
 			if (roleUser.role == roleName) {
 				Logger.info(`${roleName} extended for ${message.author.id} (${message.author.displayName})`);
 				Logger.debug(`${message.content}`);
 				await RolesCollection.updateOne(findRoleUser, { $set: { timestamp: new Date(Date.now()) } });
 			} else {
-				try {
-					const newRole = message.guild.roles.cache.find(role => role.name == roleName);
-					const oldRole = message.guild.roles.cache.find(role => role.name == roleUser.role);
+				const newRole = message.guild.roles.cache.find(role => role.name == roleName);
+				const oldRole = message.guild.roles.cache.find(role => role.name == roleUser.role);
 
-					message.member.roles.remove(oldRole);
-					message.member.roles.add(newRole);
-
-					Logger.info(`${oldRole.name} changed to ${newRole.name} for ${message.author.id} (${message.author.displayName})`);
-					Logger.debug(`${message.content}`);
-					await RolesCollection.updateOne(findRoleUser, { $set: { role: roleName, timestamp: new Date(Date.now()) } });
-				} catch (error) {
-					Logger.error(`Error when switching roles from ${roleName} for ${message.author.id} (${message.author.displayName}): ${error.message}`);
-				}
+				message.member.roles.remove(oldRole).then(async () => {
+					message.member.roles.add(newRole).then(async () => {
+						Logger.info(`${oldRole.name} changed to ${newRole.name} for ${message.author.id} (${message.author.displayName})`);
+						Logger.debug(`${message.content}`);
+						await RolesCollection.updateOne(findRoleUser, { $set: { role: roleName, timestamp: new Date(Date.now()) } });
+					}).catch((reject) => {
+						Logger.error(`Error when switching roles from ${roleName} for ${message.author.id} (${message.author.displayName}): ${reject}`);
+					});
+				}).catch((reject) => {
+					Logger.error(`Error when switching roles from ${roleName} for ${message.author.id} (${message.author.displayName}): ${reject}`);
+				});
 			}			
 		}
 
@@ -148,13 +148,12 @@ async function removeRoles() {
 			const member = await guild.members.fetch(roleUser.user);
 			const role = guild.roles.cache.find(role => role.name == roleUser.role);
 
-			try {
-				member.roles.remove(role);
+			member.roles.remove(role).then(async () => {
 				Logger.info(`${roleUser.role} removed from ${roleUser.user} (${roleUser.displayName})`);
 				await RolesCollection.deleteOne({ role: roleUser.role, user: roleUser.user, server: roleUser.server });
-			} catch (error) {
-				Logger.error(`Error when removing role ${roleName} from ${message.author.id} (${message.author.displayName}): ${error.message}`);
-			}			
+			}).catch((reject) => {
+				Logger.error(`Error when removing role ${roleName} from ${message.author.id} (${message.author.displayName}): ${reject}`);
+			});		
 		}
 	});
 }
@@ -164,8 +163,7 @@ async function pinMessage(message) {
 	const pinnedMessage = await PinsCollection.findOne(findMessage);
 	
 	if (!pinnedMessage) {
-		try {
-			message.pin();
+		message.pin().then(async () => {
 			Logger.info(`Pin for ${message.author.id} from ${message.id} (${message.author.displayName})`);
 			Logger.debug(`${message.content}`);
 
@@ -174,12 +172,12 @@ async function pinMessage(message) {
 			}
 
 			await PinsCollection.insertOne(findMessage);
-		} catch (error) {
-			Logger.error(`Error when pinning message ${message.id}: ${error.message}`);
+		}).catch((reject) => {
+			Logger.error(`Error when pinning message ${message.id}: ${reject}`);
 
-			if (error.message.includes('Maximum number of pins reached')) {
+			if (reject.includes('Maximum number of pins reached')) {
 				message.reply('Unable to pin, maxiumum number of pins reached');
 			}
-		}		
+		});		
 	}
 }
