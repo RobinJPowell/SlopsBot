@@ -1,14 +1,23 @@
 const Discord = require("discord.js");
-const Logger = require('winston');
+const Winston = require('winston');
 const MongoDB = require('mongodb').MongoClient;
 const Auth = require('./auth.json');
 
 // Configure Logger settings
-Logger.remove(Logger.transports.Console);
-Logger.add(new Logger.transports.Console, {
-    colorize: true
+const { combine, timestamp, printf, colorize, align } = Winston.format;
+
+const Logger = Winston.createLogger({
+	level:  'debug',
+	format: combine(
+		colorize({ all: true }),
+		timestamp({
+			format: 'YYYY-MM-DD hh:mm:ss.SSS',
+		}),
+		align(),
+		printf((info) => `[${info.timestamp}] ${info.level}: ${info.message}`)
+	),
+	transports: [new Winston.transports.Console()],
 });
-Logger.level = 'debug';
 
 // Connect to database
 const MongoClient = new MongoDB('mongodb://127.0.0.1:27017', { family: 4 });
