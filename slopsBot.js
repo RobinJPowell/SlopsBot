@@ -175,7 +175,7 @@ async function pinMessage(message) {
 		}).catch((reject) => {
 			Logger.error(`Error when pinning message ${message.id}: ${reject}`);
 
-			if (reject.includes('Maximum number of pins reached')) {
+			if (reject.toString().includes('Maximum number of pins reached')) {
 				message.reply('Unable to pin, maxiumum number of pins reached');
 			}
 		});		
