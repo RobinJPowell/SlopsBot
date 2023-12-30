@@ -11,7 +11,7 @@ const Logger = Winston.createLogger({
 	format: combine(
 		colorize({ all: true }),
 		timestamp({
-			format: 'YYYY-MM-DD hh:mm:ss.SSS',
+			format: 'YYYY-MM-DD HH:mm:ss.SSS',
 		}),
 		align(),
 		printf((info) => `[${info.timestamp}] ${info.level}: ${info.message}`)
