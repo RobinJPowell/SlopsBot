@@ -174,6 +174,7 @@ async function pinMessage(message) {
 			await PinsCollection.insertOne(findMessage);
 		}).catch(async (reject) => {
 			Logger.error(`Error when pinning message ${message.id}: ${reject}`);
+			Logger.debug(`${message.content}`);
 
 			if (reject.toString().includes('Maximum number of pins reached')) {
 				await PinsCollection.insertOne(findMessage);
