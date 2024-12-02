@@ -23,17 +23,23 @@ const Logger = Winston.createLogger({
 const MongoClient = new MongoDB('mongodb://127.0.0.1:27017', { family: 4 });
 const Database = MongoClient.db('slops');
 const CardsCollection = Database.collection('cards');
+const MiscCollection = Database.collection('misc');
 const PinsCollection = Database.collection('pins');
 const RolesCollection = Database.collection('roles');
 
 // Role names
-RedRole = 'Recently made a really bad pun, jape, hijink or caper.';
-GreenRole = 'Recently actually made a good pun, jape, hijink or caper.';
-YellowRole = 'Recently actually made an average pun, jape, hijink or caper.';
+const RedRole = 'Recently made a really bad pun, jape, hijink or caper.';
+const GreenRole = 'Recently actually made a good pun, jape, hijink or caper.';
+const YellowRole = 'Recently actually made an average pun, jape, hijink or caper.';
+
+// Hardcoded general channel id (name changes)
+const GeneralChannelID = '494460063356813322';
+const GeneralChannelNightName = 'night-gang';
 
 const bot = new Discord.Client({intents: 37377});
 
 setInterval(removeRoles, 15 * 60 * 1000);
+setInterval(lateNightCheck, 1 * 60 * 1000);
 
 bot.on('ready', function (evt) {
     Logger.info('Connected');
@@ -181,4 +187,43 @@ async function pinMessage(message) {
 			}
 		});		
 	}
+}
+
+async function lateNightCheck() {
+	const generalChannel = bot.channels.cache.get(GeneralChannelID);
+	const generalChannelName = generalChannel.name;
+	const now = new Date(Date.now());	
+	let lastLateNightCheck = -1;
+	let lastDaytimeCheck = -1;
+	
+	const generalChannelNameRecord = await MiscCollection.findOne({ name: 'generalChannelName' });
+	const lastLateNightCheckRecord = await MiscCollection.findOne({ name: 'lastLateNightCheck' });
+	const lastDaytimeCheckRecord = await MiscCollection.findOne({ name: 'lastDaytimeCheck' });
+        
+    if (!generalChannelNameRecord) {		
+		await MiscCollection.insertOne({ name: 'generalChannelName', channelName: generalChannelName })
+	}
+	
+	if (lastLateNightCheckRecord) {
+        lastLateNightCheck = lastLateNightCheckRecord.day;
+    } else {
+        await MiscCollection.insertOne({ name: 'lastLateNightCheck',  day: lastLateNightCheck });
+    }
+
+	if (lastDaytimeCheckRecord) {
+		lastDaytimeCheck = lastDaytimeCheckRecord.day;
+	} else {
+		await MiscCollection.insertOne( { name: 'lastDaytimeCheck', day: lastDaytimeCheck } )
+	}
+
+	if (generalChannelName != GeneralChannelNightName && lastLateNightCheck != now.getDate() && now.getHours() == 2) {
+		generalChannel.setName(GeneralChannelNightName);
+		await MiscCollection.updateOne({ name: 'generalChannelName' }, { $set: { channelName: generalChannelName } });
+		await MiscCollection.updateOne({ name: 'lastLateNightCheck' }, { $set: { day: now.getDate() } });
+		Logger.info(`It's late, ${generalChannelName} changed to ${GeneralChannelNightName}`);
+	} else if (generalChannelName == GeneralChannelNightName && lastDaytimeCheck != now.getDate() && now.getHours() == 6) {
+		generalChannel.setName(generalChannelNameRecord.channelName);
+		await MiscCollection.updateOne({ name: 'lastDaytimeCheck' }, { $set: { day: now.getDate() } });
+		Logger.info(`It's daytime, ${GeneralChannelNightName} changed back to ${generalChannelNameRecord.channelName}`);
+	};
 }
