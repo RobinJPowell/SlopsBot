@@ -33,7 +33,7 @@ const GreenRole = 'Recently actually made a good pun, jape, hijink or caper.';
 const YellowRole = 'Recently actually made an average pun, jape, hijink or caper.';
 
 // Hardcoded general channel id (name changes)
-const GeneralChannelID = '494460063356813322';
+const GeneralChannelID = '433227076657610752';
 const GeneralChannelNightName = '💀┃night-gang';
 
 const bot = new Discord.Client({intents: 37377});
