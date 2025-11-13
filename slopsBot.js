@@ -46,6 +46,7 @@ bot.on('ready', function (evt) {
 });
 bot.on('messageCreate', function(message) {
 	checkReactions(message);
+	correctCards(message);
 });
 
 bot.login(Auth.token);
@@ -139,7 +140,7 @@ async function addRole(roleName, message) {
 			}			
 		}
 
-		await CardsCollection.insertOne(findMessage);
+		await CardsCollection.insertOne({ ...findMessage, user: message.author.id, server: message.guildId });
     }
 }
 
@@ -226,4 +227,22 @@ async function lateNightCheck() {
 		await MiscCollection.updateOne({ name: 'lastDaytimeCheck' }, { $set: { day: now.getDate() } });
 		Logger.info(`It's daytime, ${GeneralChannelNightName} changed back to ${generalChannelNameRecord.channelName}`);
 	};
+}
+
+// Temporary function to add missing user IDs to card records
+// Some messages will have been deleted, or are from long dead threads,
+// remove function once we get close enough to all cards being populated
+async function correctCards(message) {	
+	const cursor = await CardsCollection.find();
+	const cardsArray = await cursor.toArray();
+	
+	cardsArray.forEach(async (card) => {
+		if (card.userId == null) {
+			const channel = message.channel;
+
+			channel.messages.fetch(card.messageId)
+				.then(message => CardsCollection.updateOne( { role: card.role, messageId: card.messageId }, { $set: { userId: message.author.id, server: message.guildId } }))
+				.catch();
+		}
+	});
 }
