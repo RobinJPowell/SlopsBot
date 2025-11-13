@@ -242,7 +242,7 @@ async function correctCards(message) {
 
 			channel.messages.fetch(card.messageId)
 				.then(message => CardsCollection.updateOne( { role: card.role, messageId: card.messageId }, { $set: { userId: message.author.id, server: message.guildId } }))
-				.catch();
+				.catch(Logger.silly(`Unable to update card for message ${card.messageId}`));
 		}
 	});
 }
