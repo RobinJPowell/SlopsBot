@@ -84,13 +84,13 @@ function checkReactions(message) {
 						
 						if (reactionCount == reactions.size) {						
 							if (redCount >= 5) {
-								addRole(RedRole, msg);
+								addRole(RedRole, msg, reaction);
 							}
 							if (greenCount >= 5) {
-								addRole(GreenRole, msg);
+								addRole(GreenRole, msg, reaction);
 							}
 							if (yellowCount >= 5) {
-								addRole(YellowRole, msg);
+								addRole(YellowRole, msg, reaction);
 							}
 							if (pinCount >= 5) {
 								pinMessage(msg);
@@ -103,48 +103,64 @@ function checkReactions(message) {
 	});
 }
 
-async function addRole(roleName, message) {	
+async function addRole(roleName, message, reaction) {	
 	const findMessage = { role: roleName, messageId: message.id };
 	const cardedMessage = await CardsCollection.findOne(findMessage);
     
     if (!cardedMessage) {
-		const findRoleUser = { user: message.author.id, server: message.guildId };
-		const roleUser = await RolesCollection.findOne(findRoleUser);
+		let selfGreen = false;
+		if (roleName == GreenRole) {
+			const reactionUsers = await reaction.users.fetch();
 
-		if (!roleUser) {
-			const role = message.guild.roles.cache.find(role => role.name == roleName);
-			
-			message.member.roles.add(role).then(async () => {
-				Logger.info(`${roleName} given to ${message.author.id} (${message.author.displayName})`);
-				Logger.debug(`${message.content}`);
-				await RolesCollection.insertOne({ ...findRoleUser, role: roleName, displayName: message.author.displayName, timestamp: new Date(Date.now()) });	
-			}).catch((reject) => {
-				Logger.error(`Error when adding role ${roleName} to ${message.author.id} (${message.author.displayName}): ${reject}`);
+			reactionUsers.forEach(async (user) => {
+				if (message.author.id == user.id) {
+					selfGreen = true;
+					message.reply({ files: [{ attachment: "selfGreen.jpg" }] });
+					addRole(RedRole, message, reaction);
+					await CardsCollection.insertOne({ ...findMessage, user: message.author.id, server: message.guildId });
+				}
 			});
-		} else {
-			if (roleUser.role == roleName) {
-				Logger.info(`${roleName} extended for ${message.author.id} (${message.author.displayName})`);
-				Logger.debug(`${message.content}`);
-				await RolesCollection.updateOne(findRoleUser, { $set: { timestamp: new Date(Date.now()) } });
-			} else {
-				const newRole = message.guild.roles.cache.find(role => role.name == roleName);
-				const oldRole = message.guild.roles.cache.find(role => role.name == roleUser.role);
+		}
 
-				message.member.roles.remove(oldRole).then(async () => {
-					message.member.roles.add(newRole).then(async () => {
-						Logger.info(`${oldRole.name} changed to ${newRole.name} for ${message.author.id} (${message.author.displayName})`);
-						Logger.debug(`${message.content}`);
-						await RolesCollection.updateOne(findRoleUser, { $set: { role: roleName, timestamp: new Date(Date.now()) } });
+		if (!selfGreen) {
+			const findRoleUser = { user: message.author.id, server: message.guildId };
+			const roleUser = await RolesCollection.findOne(findRoleUser);
+
+			if (!roleUser) {
+				const role = message.guild.roles.cache.find(role => role.name == roleName);
+				
+				message.member.roles.add(role).then(async () => {
+					Logger.info(`${roleName} given to ${message.author.id} (${message.author.displayName})`);
+					Logger.debug(`${message.content}`);
+					await RolesCollection.insertOne({ ...findRoleUser, role: roleName, displayName: message.author.displayName, timestamp: new Date(Date.now()) });	
+				}).catch((reject) => {
+					Logger.error(`Error when adding role ${roleName} to ${message.author.id} (${message.author.displayName}): ${reject}`);
+				});
+			} else {
+				if (roleUser.role == roleName) {
+					Logger.info(`${roleName} extended for ${message.author.id} (${message.author.displayName})`);
+					Logger.debug(`${message.content}`);
+					await RolesCollection.updateOne(findRoleUser, { $set: { timestamp: new Date(Date.now()) } });
+				} else {
+					const newRole = message.guild.roles.cache.find(role => role.name == roleName);
+					const oldRole = message.guild.roles.cache.find(role => role.name == roleUser.role);
+
+					message.member.roles.remove(oldRole).then(async () => {
+						message.member.roles.add(newRole).then(async () => {
+							Logger.info(`${oldRole.name} changed to ${newRole.name} for ${message.author.id} (${message.author.displayName})`);
+							Logger.debug(`${message.content}`);
+							await RolesCollection.updateOne(findRoleUser, { $set: { role: roleName, timestamp: new Date(Date.now()) } });
+						}).catch((reject) => {
+							Logger.error(`Error when switching roles from ${roleName} for ${message.author.id} (${message.author.displayName}): ${reject}`);
+						});
 					}).catch((reject) => {
 						Logger.error(`Error when switching roles from ${roleName} for ${message.author.id} (${message.author.displayName}): ${reject}`);
 					});
-				}).catch((reject) => {
-					Logger.error(`Error when switching roles from ${roleName} for ${message.author.id} (${message.author.displayName}): ${reject}`);
-				});
-			}			
-		}
+				}			
+			}
 
-		await CardsCollection.insertOne({ ...findMessage, user: message.author.id, server: message.guildId });
+			await CardsCollection.insertOne({ ...findMessage, user: message.author.id, server: message.guildId });
+		}
     }
 }
 
@@ -278,6 +294,8 @@ async function countCards(message, colour) {
 
 		if (leaderboard > "") {
 			message.reply(leaderboard.trim());
+		} else {
+			message.reply(`No ${colour} cards counted yet`)
 		}
 	}
 }
