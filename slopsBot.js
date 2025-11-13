@@ -46,7 +46,11 @@ bot.on('ready', function (evt) {
 });
 bot.on('messageCreate', function(message) {
 	checkReactions(message);
-	correctCards(message);
+
+	if (message.content.startsWith('!lb')) {
+		colour = message.content.substring(message.content.indexOf(' ') + 1);
+		countCards(message, colour.toLowerCase());
+	}
 });
 
 bot.login(Auth.token);
@@ -229,20 +233,51 @@ async function lateNightCheck() {
 	};
 }
 
-// Temporary function to add missing user IDs to card records
-// Some messages will have been deleted, or are from long dead threads,
-// remove function once we get close enough to all cards being populated
-async function correctCards(message) {	
-	const cursor = await CardsCollection.find();
-	const cardsArray = await cursor.toArray();
-	
-	cardsArray.forEach(async (card) => {
-		if (card.userId == null) {
-			const channel = message.channel;
+async function countCards(message, colour) {
+	let role = "";
 
-			channel.messages.fetch(card.messageId)
-				.then(message => CardsCollection.updateOne( { role: card.role, messageId: card.messageId }, { $set: { userId: message.author.id, server: message.guildId } }))
-				.catch(Logger.silly(`Unable to update card for message ${card.messageId}`));
+	switch (colour) {
+		case "red":
+			role = RedRole;
+			break;
+		case "yellow":
+			role = YellowRole;
+			break;
+		case "green":
+			role = GreenRole;
+			break;
+	}
+
+	if (role != "") {
+		const cursor = await CardsCollection.find({ role: role, server: message.guildId });
+		const cardsArray = await cursor.toArray();
+		const count = new Map();
+
+		cardsArray.forEach(async (card) => {
+			if (card.userId != null) {
+				count.set(card.userId, (count.get(card.userId) || 0) + 1)
+			}
+		});
+
+		const sortedCountArray = Array.from(count).sort((a, b) => a[1] - b[1]);
+		const sortedCountMap = new Map(sortedCountArray);
+
+		let leaderboard = "";
+		let numEntries = 5;
+
+		for (let [key, value] of sortedCountMap) {
+			if (numEntries == 0) {
+				break;
+			}
+			
+			const guild = await bot.guilds.fetch(message.guildId);
+			const member = await guild.members.fetch(key);
+			leaderboard += `${member} - ${value}\n`;
+			numEntries--;
 		}
-	});
+
+		if (leaderboard > "") {
+			message.reply(leaderboard.trim());
+		}
+	}
 }
