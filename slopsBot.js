@@ -279,17 +279,11 @@ async function countCards(message, colour) {
 		const sortedCountMap = new Map(sortedCountArray.toReversed());
 
 		let leaderboard = "";
-		let numEntries = 5;
 
-		for (let [key, value] of sortedCountMap) {
-			if (numEntries == 0) {
-				break;
-			}
-			
+		for (let [key, value] of sortedCountMap) {			
 			const guild = await bot.guilds.fetch(message.guildId);
 			const member = await guild.members.fetch(key);
 			leaderboard += `${member.displayName} - ${value}\n`;
-			numEntries--;
 		}
 
 		if (leaderboard > "") {
