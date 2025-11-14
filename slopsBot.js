@@ -270,13 +270,13 @@ async function countCards(message, colour) {
 		const count = new Map();
 
 		cardsArray.forEach(async (card) => {
-			if (card.userId != null) {
-				count.set(card.userId, (count.get(card.userId) || 0) + 1)
+			if (card.user != null) {
+				count.set(card.user, (count.get(card.user) || 0) + 1);
 			}
 		});
 
 		const sortedCountArray = Array.from(count).sort((a, b) => a[1] - b[1]);
-		const sortedCountMap = new Map(sortedCountArray);
+		const sortedCountMap = new Map(sortedCountArray.toReversed());
 
 		let leaderboard = "";
 		let numEntries = 5;
@@ -288,7 +288,7 @@ async function countCards(message, colour) {
 			
 			const guild = await bot.guilds.fetch(message.guildId);
 			const member = await guild.members.fetch(key);
-			leaderboard += `${member} - ${value}\n`;
+			leaderboard += `${member.displayName} - ${value}\n`;
 			numEntries--;
 		}
 
