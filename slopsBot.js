@@ -198,7 +198,7 @@ async function pinMessage(message) {
 				message.reply('SLOPSBOT DOES NOT CARE FOR YOUR INSTRUCTIONS');
 			}
 
-			await PinsCollection.insertOne(findMessage);
+			await PinsCollection.insertOne({ ...findMessage, user: message.author.id, server: message.guildId });
 		}).catch(async (reject) => {
 			Logger.error(`Error when pinning message ${message.id}: ${reject}`);
 			Logger.debug(`${message.content}`);
@@ -251,6 +251,7 @@ async function lateNightCheck() {
 
 async function countCards(message, colour) {
 	let role = "";
+	const count = new Map();
 
 	switch (colour) {
 		case "red":
@@ -262,19 +263,32 @@ async function countCards(message, colour) {
 		case "green":
 			role = GreenRole;
 			break;
+		case "pins":
+			role = "pins"
+			break;
 	}
 
-	if (role != "") {
+	if (role == "pins") {
+		const cursor = await PinsCollection.find({ server: message.guildId });
+		const pinsArray = await cursor.toArray();
+
+		pinsArray.forEach(async (pin) => {
+			if (pin.user != null) {
+				count.set(pin.user, (count.get(pin.user) || 0) + 1);
+			}
+		});
+	} else if (role != "") {
 		const cursor = await CardsCollection.find({ role: role, server: message.guildId });
 		const cardsArray = await cursor.toArray();
-		const count = new Map();
 
 		cardsArray.forEach(async (card) => {
 			if (card.user != null) {
 				count.set(card.user, (count.get(card.user) || 0) + 1);
 			}
 		});
+	}
 
+	if (role != "") {
 		const sortedCountArray = Array.from(count).sort((a, b) => a[1] - b[1]);
 		const sortedCountMap = new Map(sortedCountArray.toReversed());
 
@@ -288,8 +302,10 @@ async function countCards(message, colour) {
 
 		if (leaderboard > "") {
 			message.reply(leaderboard.trim());
+		} else if (role == "pins") {
+			message.reply(`No pins counted yet`);
 		} else {
-			message.reply(`No ${colour} cards counted yet`)
+			message.reply(`No ${colour} cards counted yet`);
 		}
 	}
 }
