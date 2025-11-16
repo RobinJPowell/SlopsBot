@@ -204,7 +204,7 @@ async function pinMessage(message) {
 			Logger.debug(`${message.content}`);
 
 			if (reject.toString().includes('Maximum number of pins reached')) {
-				await PinsCollection.insertOne(findMessage);
+				await PinsCollection.insertOne({ ...findMessage, user: message.author.id, server: message.guildId );
 			}
 		});		
 	}
