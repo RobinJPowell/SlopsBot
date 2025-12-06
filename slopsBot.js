@@ -86,7 +86,7 @@ function checkReactions(message) {
 							if (redCount >= 5) {
 								addRole(RedRole, msg);
 							}
-							if (greenCount >= 2) {
+							if (greenCount >= 5) {
 								addGreen(msg, reaction);
 							}
 							if (yellowCount >= 5) {
@@ -118,7 +118,7 @@ async function addGreen(message, reaction) {
 				selfGreen = true;
 				message.reply({ files: [{ attachment: "selfGreen.jpg" }] });
 				addRole(RedRole, message, reaction);
-				await CardsCollection.insertOne({ ...findMessage, user: message.author.id, server: message.guildId });
+				await CardsCollection.insertOne({ ...findMessage, user: "", server: message.guildId });
 			}
 
 			if (!selfGreen && reactionUsers.size == reactionCount) {
