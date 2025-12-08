@@ -291,7 +291,7 @@ async function countCards(message, colour) {
 		const cardsArray = await cursor.toArray();
 
 		cardsArray.forEach(async (card) => {
-			if (card.user != null) {
+			if (card.user != null && card.user != "") {
 				count.set(card.user, (count.get(card.user) || 0) + 1);
 			}
 		});
