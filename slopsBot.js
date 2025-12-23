@@ -36,6 +36,8 @@ const YellowRole = 'Recently actually made an average pun, jape, hijink or caper
 const GeneralChannelID = '433227076657610753';
 const GeneralChannelNightName = '💀┃night-gang';
 
+const Susan = '456462512695672842';
+
 const bot = new Discord.Client({intents: 37377});
 
 setInterval(removeRoles, 15 * 60 * 1000);
@@ -275,6 +277,9 @@ async function countCards(message, colour) {
 		case "pins":
 			role = "pins"
 			break;
+		case "susan":
+			role = "susan";
+			break;
 	}
 
 	if (role == "pins") {
@@ -284,6 +289,17 @@ async function countCards(message, colour) {
 		pinsArray.forEach(async (pin) => {
 			if (pin.user != null) {
 				count.set(pin.user, (count.get(pin.user) || 0) + 1);
+			}
+		});
+	} else if (role == "susan") {
+		const cursor = await CardsCollection.find({ role: RedRole, server: message.guildId });
+		const cardsArray = await cursor.toArray();
+
+		cardsArray.forEach(async (card) => {
+			if (card.user == Susan) {
+				count.set("Susan", (count.get("Susan") || 0) + 1);
+			} else if (card.user != null && card.user != "") {
+				count.set("Everyone Else", (count.get("Everyone Else") || 0) + 1);
 			}
 		});
 	} else if (role != "") {
@@ -297,7 +313,9 @@ async function countCards(message, colour) {
 		});
 	}
 
-	if (role != "") {
+	if (role == "susan") {
+		message.reply(`Susan - ${count.get("Susan")} reds\nEveryone Else - ${count.get("Everyone Else")} reds`);
+	} else if (role != "") {
 		const sortedCountArray = Array.from(count).sort((a, b) => a[1] - b[1]);
 		const sortedCountMap = new Map(sortedCountArray.toReversed());
 
