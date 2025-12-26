@@ -37,6 +37,7 @@ const GeneralChannelID = '433227076657610753';
 const GeneralChannelNightName = '💀┃night-gang';
 
 const Susan = '456462512695672842';
+const SelfGreenImages = ["ref.jpg","uno.jpg"];
 
 const bot = new Discord.Client({intents: 37377});
 
@@ -118,7 +119,7 @@ async function addGreen(message, reaction) {
 			reactionCount++;
 			if (message.author.id == user.id) {
 				selfGreen = true;
-				message.reply({ files: [{ attachment: "selfGreen.jpg" }] });
+				message.reply({ files: [{ attachment: SelfGreenImages[Math.floor(Math.random()*SelfGreenImages.length)] }] });
 				addRole(RedRole, message, reaction);
 				await CardsCollection.insertOne({ ...findMessage, user: "", server: message.guildId });
 			}
