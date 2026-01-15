@@ -71,6 +71,7 @@ function checkReactions(message) {
 				let greenCount = 0;
 				let yellowCount = 0;
 				let pinCount = 0;
+				let greenReaction;
 
 				reactions.forEach((reaction, reactionString) => {
 					setTimeout(() => {
@@ -79,6 +80,7 @@ function checkReactions(message) {
 							redCount = reaction.count;
 						} else if (reactionString == '🟩') {
 							greenCount = reaction.count;
+							greenReaction = reaction;
 						} else if (reactionString == '🟨') {
 							yellowCount = reaction.count;
 						} else if (reactionString == '📌') {
@@ -90,7 +92,7 @@ function checkReactions(message) {
 								addRole(RedRole, msg);
 							}
 							if (greenCount >= 5) {
-								addGreen(msg, reaction);
+								addGreen(msg, greenReaction);
 							}
 							if (yellowCount >= 5) {
 								addRole(YellowRole, msg);
