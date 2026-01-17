@@ -123,7 +123,7 @@ async function addGreen(message, reaction) {
 				if (message.author.id == user.id) {
 					selfGreen = true;
 					message.reply({ files: [{ attachment: SelfGreenImages[Math.floor(Math.random()*SelfGreenImages.length)] }] });
-					addRole(RedRole, message, reaction);
+					addRole(RedRole, message);
 					await CardsCollection.insertOne({ ...findMessage, user: "", server: message.guildId });
 				}
 
