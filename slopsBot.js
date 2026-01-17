@@ -118,19 +118,17 @@ async function addGreen(message, reaction) {
 		let reactionCount = 0;
 
 		reactionUsers.forEach(async (user) => {
-			setTimeout(async () => {
-				reactionCount++;
-				if (message.author.id == user.id) {
-					selfGreen = true;
-					message.reply({ files: [{ attachment: SelfGreenImages[Math.floor(Math.random()*SelfGreenImages.length)] }] });
-					addRole(RedRole, message);
-					await CardsCollection.insertOne({ ...findMessage, user: "", server: message.guildId });
-				}
+			reactionCount++;
+			if (message.author.id == user.id) {
+				selfGreen = true;
+				message.reply({ files: [{ attachment: SelfGreenImages[Math.floor(Math.random()*SelfGreenImages.length)] }] });
+				addRole(RedRole, message);
+				await CardsCollection.insertOne({ ...findMessage, user: "", server: message.guildId });
+			}
 
-				if (!selfGreen && reactionUsers.size == reactionCount) {
-					addRole(GreenRole, message);
-				}
-			}, reactionCount * 50);
+			if (!selfGreen && reactionUsers.size == reactionCount) {
+				addRole(GreenRole, message);
+			}
 		});
 	}
 }
