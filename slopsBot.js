@@ -37,7 +37,7 @@ const GeneralChannelID = '433227076657610753';
 const GeneralChannelNightName = '💀┃night-gang';
 
 const Susan = '456462512695672842';
-const SelfGreenImages = ["ref.jpg","uno.jpg"];
+const SelfGreenImages = ["ref.jpg","uno.jpg","pay.jpg"];
 
 const bot = new Discord.Client({intents: 37377});
 
