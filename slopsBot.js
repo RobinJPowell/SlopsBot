@@ -40,6 +40,7 @@ const GeneralChannelNightName = '💀┃night-gang';
 const Susan = '456462512695672842';
 const SelfGreenImages = ["ref.jpg","uno.jpg","pay.jpg"];
 const Klausies = ["1497411105243271268","1497411074461405224","1497411040349261927","921143426794274877","1282038287741095946","1178313328884469780"];
+const SlopsBot = ["SlopsBot","SlopsTest"];
 
 const bot = new Discord.Client({intents: 37377});
 
@@ -63,9 +64,7 @@ bot.login(Auth.token);
 function checkReactions(message) {
 	const channel = message.channel;	
 
-	channel.messages.fetch({ limit: 100 }).then(messages => {			
-		let klausyCount = 0;
-		
+	channel.messages.fetch({ limit: 100 }).then(messages => {
 		messages.forEach((msg) => {
 			const reactions = msg.reactions.cache;
 
@@ -75,6 +74,7 @@ function checkReactions(message) {
 				let greenCount = 0;
 				let yellowCount = 0;
 				let pinCount = 0;
+				let klausyCount = 0;
 				let greenReaction;
 
 				reactions.forEach((reaction, reactionString) => {
@@ -106,24 +106,25 @@ function checkReactions(message) {
 							if (pinCount >= 5) {
 								pinMessage(msg);
 							}
+							if (klausyCount >= 5 && !SlopsBot.includes(message.author.displayName)) {				
+								wiggle(msg);
+							}
 						}
 					}, reactionCount * 50);
 				});
 			}
-		});
-		
-		setTimeout(async () => {
-			if (klausyCount >= 5) {
-				const findMessage = { role: Wiggled, messageId: message.id };
-				const wiggled = await CardsCollection.findOne(findMessage);
-
-				if (!wiggled) {
-					message.reply({ files: [{attachment: "klausyWiggle.gif"}] });
-					await CardsCollection.insertOne({ ...findMessage, user: message.author.id, server: message.guildId });	
-				}
-			}
-		}, 5000);
+		});		
 	});
+}
+
+async function wiggle (message) {
+	const findMessage = { role: Wiggled, messageId: message.id };
+	const wiggled = await CardsCollection.findOne(findMessage);
+
+	if (!wiggled) {
+		message.reply({ files: [{attachment: "klausyWiggle.gif"}] });
+		await CardsCollection.insertOne({ ...findMessage, user: message.author.id, server: message.guildId });	
+	}
 }
 
 async function addGreen(message, reaction) {
