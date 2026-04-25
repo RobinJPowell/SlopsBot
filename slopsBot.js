@@ -31,6 +31,7 @@ const RolesCollection = Database.collection('roles');
 const RedRole = 'Recently made a really bad pun, jape, hijink or caper.';
 const GreenRole = 'Recently actually made a good pun, jape, hijink or caper.';
 const YellowRole = 'Recently actually made an average pun, jape, hijink or caper.';
+const Wiggled = "Wiggled";
 
 // Hardcoded general channel id (name changes)
 const GeneralChannelID = '433227076657610753';
@@ -38,6 +39,7 @@ const GeneralChannelNightName = '💀┃night-gang';
 
 const Susan = '456462512695672842';
 const SelfGreenImages = ["ref.jpg","uno.jpg","pay.jpg"];
+const Klausies = ["1497411105243271268","1497411074461405224","1497411040349261927","921143426794274877","1282038287741095946","1178313328884469780"];
 
 const bot = new Discord.Client({intents: 37377});
 
@@ -62,6 +64,8 @@ function checkReactions(message) {
 	const channel = message.channel;	
 
 	channel.messages.fetch({ limit: 100 }).then(messages => {			
+		let klausyCount = 0;
+		
 		messages.forEach((msg) => {
 			const reactions = msg.reactions.cache;
 
@@ -85,6 +89,8 @@ function checkReactions(message) {
 							yellowCount = reaction.count;
 						} else if (reactionString == '📌') {
 							pinCount = reaction.count;
+						} else if (Klausies.includes(reactionString)) {
+							klausyCount += reaction.count;
 						}
 						
 						if (reactionCount == reactions.size) {						
@@ -102,9 +108,21 @@ function checkReactions(message) {
 							}
 						}
 					}, reactionCount * 50);
-				});				
-			}		
+				});
+			}
 		});
+		
+		setTimeout(async () => {
+			if (klausyCount >= 5) {
+				const findMessage = { role: Wiggled, messageId: message.id };
+				const wiggled = await CardsCollection.findOne(findMessage);
+
+				if (!wiggled) {
+					message.reply({ files: [{attachment: "klausyWiggle.gif"}] });
+					await CardsCollection.insertOne({ ...findMessage, user: message.author.id, server: message.guildId });	
+				}
+			}
+		}, 5000);
 	});
 }
 
